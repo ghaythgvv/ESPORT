@@ -20,6 +20,17 @@ COLOR = 0x9B59FF
 COOLDOWN_SECONDS = 60       # anti-spam between ticket opens
 INACTIVE_HOURS = 24         # auto close if nobody writes
 
+# ───────────── CUSTOM EMOJIS ─────────────
+# Field titles use the text format. If an emoji is animated, change "<:" to "<a:".
+EMOJI_HOW = "<:how:1559975435658461264>"      # How to apply
+EMOJI_LOOK = "<:look:1559975433368248460>"    # What we look for
+
+# Buttons use PartialEmoji. If an emoji is animated, add animated=True.
+EMOJI_CLAIM = discord.PartialEmoji(name="claim", id=1554675609525821531)
+EMOJI_ACCEPT = discord.PartialEmoji(name="accept", id=1553555472811040788)
+EMOJI_DENY = discord.PartialEmoji(name="deny", id=1559043013811114105)
+EMOJI_CLOSE = discord.PartialEmoji(name="close", id=1553472894976393246)
+
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -59,7 +70,7 @@ def ticket_owner_id(channel) -> int | None:
 async def staff_only(interaction: discord.Interaction) -> bool:
     if is_staff(interaction.user):
         return True
-    await interaction.response.send_message("❌ Staff only.", ephemeral=True)
+    await interaction.response.send_message("Staff only.", ephemeral=True)
     return False
 
 
@@ -87,7 +98,7 @@ async def close_ticket(channel: discord.TextChannel, reason: str):
     try:
         file = await make_transcript(channel)
         embed = discord.Embed(
-            title="📁 Esport Ticket Closed",
+            title="Esport Ticket Closed",
             description=f"**Channel:** #{channel.name}\n**Applicant:** <@{owner_id}>\n**Reason:** {reason}",
             color=COLOR,
         )
@@ -104,7 +115,7 @@ class TicketView(discord.ui.View):
         super().__init__(timeout=None)
 
     @discord.ui.button(label="Claim", style=discord.ButtonStyle.secondary,
-                       emoji="🙋", custom_id="esport_claim")
+                       emoji=EMOJI_CLAIM, custom_id="esport_claim")
     async def claim(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await staff_only(interaction):
             return
@@ -112,10 +123,10 @@ class TicketView(discord.ui.View):
         button.disabled = True
         button.label = f"Claimed by {interaction.user.display_name}"[:80]
         await interaction.message.edit(view=self)
-        await interaction.channel.send(f"🙋 {interaction.user.mention} will review this application.")
+        await interaction.channel.send(f"{interaction.user.mention} will review this application.")
 
-    @discord.ui.button(label="Accept", style=discord.ButtonStyle.success,
-                       emoji="✅", custom_id="esport_accept")
+    @discord.ui.button(label="Accept", style=discord.ButtonStyle.secondary,
+                       emoji=EMOJI_ACCEPT, custom_id="esport_accept")
     async def accept(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await staff_only(interaction):
             return
@@ -133,20 +144,20 @@ class TicketView(discord.ui.View):
                 child.disabled = True
         await interaction.message.edit(view=self)
         await interaction.channel.send(embed=discord.Embed(
-            title="✅ APPLICATION ACCEPTED",
-            description=f"<@{owner_id}> welcome to the **Esport Team**! 🏆\nAccepted by {interaction.user.mention}",
+            title="APPLICATION ACCEPTED",
+            description=f"<@{owner_id}> welcome to the **Esport Team**!\nAccepted by {interaction.user.mention}",
             color=0x2ECC71))
         if member:
             try:
-                await member.send(f"✅ Your Esport application in **{interaction.guild.name}** was **accepted**! 🏆")
+                await member.send(f"Your Esport application in **{interaction.guild.name}** was **accepted**!")
             except Exception:
                 pass
         await send_log(interaction.guild, discord.Embed(
-            title="✅ Esport Accepted",
+            title="Esport Accepted",
             description=f"<@{owner_id}> accepted by {interaction.user.mention}", color=0x2ECC71))
 
-    @discord.ui.button(label="Deny", style=discord.ButtonStyle.danger,
-                       emoji="⛔", custom_id="esport_deny")
+    @discord.ui.button(label="Deny", style=discord.ButtonStyle.secondary,
+                       emoji=EMOJI_DENY, custom_id="esport_deny")
     async def deny(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await staff_only(interaction):
             return
@@ -158,25 +169,25 @@ class TicketView(discord.ui.View):
                 child.disabled = True
         await interaction.message.edit(view=self)
         await interaction.channel.send(embed=discord.Embed(
-            title="⛔ APPLICATION DENIED",
+            title="APPLICATION DENIED",
             description=f"<@{owner_id}> your application was not accepted this time.\nDenied by {interaction.user.mention}",
             color=0xE74C3C))
         if member:
             try:
-                await member.send(f"⛔ Your Esport application in **{interaction.guild.name}** was **denied**. You can try again later.")
+                await member.send(f"Your Esport application in **{interaction.guild.name}** was **denied**. You can try again later.")
             except Exception:
                 pass
         await send_log(interaction.guild, discord.Embed(
-            title="⛔ Esport Denied",
+            title="Esport Denied",
             description=f"<@{owner_id}> denied by {interaction.user.mention}", color=0xE74C3C))
 
     @discord.ui.button(label="Close", style=discord.ButtonStyle.secondary,
-                       emoji="🔒", custom_id="esport_close")
+                       emoji=EMOJI_CLOSE, custom_id="esport_close")
     async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
         owner_id = ticket_owner_id(interaction.channel)
         if not (interaction.user.id == owner_id or is_staff(interaction.user)):
-            return await interaction.response.send_message("❌ You can't close this ticket.", ephemeral=True)
-        await interaction.response.send_message("🔒 Closing in 5 seconds... transcript is being saved.")
+            return await interaction.response.send_message("You can't close this ticket.", ephemeral=True)
+        await interaction.response.send_message("Closing in 5 seconds... transcript is being saved.")
         await asyncio.sleep(5)
         await close_ticket(interaction.channel, f"Closed by {interaction.user}")
 
@@ -186,22 +197,22 @@ class JoinView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="Apply Now", style=discord.ButtonStyle.primary,
-                       emoji="🎮", custom_id="esport_join")
+    @discord.ui.button(label="Apply Now", style=discord.ButtonStyle.secondary,
+                       custom_id="esport_join")
     async def join(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild, user = interaction.guild, interaction.user
 
         left = COOLDOWN_SECONDS - (time.time() - cooldowns.get(user.id, 0))
         if left > 0:
             return await interaction.response.send_message(
-                f"⏳ Please wait {int(left)}s before trying again.", ephemeral=True)
+                f"Please wait {int(left)}s before trying again.", ephemeral=True)
 
         if ESPORT_ROLE_ID and any(r.id == ESPORT_ROLE_ID for r in user.roles):
-            return await interaction.response.send_message("✅ You are already in the Esport Team.", ephemeral=True)
+            return await interaction.response.send_message("You are already in the Esport Team.", ephemeral=True)
 
         category = guild.get_channel(CATEGORY_ID)
         if not isinstance(category, discord.CategoryChannel):
-            return await interaction.response.send_message("❌ Esport category is not set up. Tell an admin.", ephemeral=True)
+            return await interaction.response.send_message("Esport category is not set up. Tell an admin.", ephemeral=True)
 
         existing = discord.utils.find(lambda c: c.topic == f"esport:{user.id}", category.text_channels)
         if existing:
@@ -210,7 +221,7 @@ class JoinView(discord.ui.View):
 
         if len(category.channels) >= 50:
             return await interaction.response.send_message(
-                "📛 Applications are full right now. Please try again in a bit.", ephemeral=True)
+                "Applications are full right now. Please try again in a bit.", ephemeral=True)
 
         cooldowns[user.id] = time.time()
         await interaction.response.defer(ephemeral=True)
@@ -232,22 +243,22 @@ class JoinView(discord.ui.View):
             topic=f"esport:{user.id}", overwrites=overwrites)
 
         embed = discord.Embed(
-            title="🎮  ESPORT TEAM APPLICATION",
+            title="ESPORT TEAM APPLICATION",
             description=(
-                f"Welcome {user.mention}! 👋\n"
+                f"Welcome {user.mention}!\n"
                 "Send the following in this ticket and staff will review it soon."
             ),
             color=COLOR,
         )
-        embed.add_field(name="1️⃣  What do you play?",
+        embed.add_field(name="1.  What do you play?",
                         value="Tell us your game(s), rank and role.", inline=False)
-        embed.add_field(name="2️⃣  Send a clip 🎥",
+        embed.add_field(name="2.  Send a clip",
                         value="Upload a gameplay clip or paste a link (YouTube / Medal / Streamable).", inline=False)
         embed.set_thumbnail(url=user.display_avatar.url)
         embed.set_footer(text="ELT Esport  •  Good luck!")
         ping = staff.mention if staff else ""
         await channel.send(content=f"{user.mention} {ping}", embed=embed, view=TicketView())
-        await interaction.followup.send(f"✅ Your ticket is ready: {channel.mention}", ephemeral=True)
+        await interaction.followup.send(f"Your ticket is ready: {channel.mention}", ephemeral=True)
 
 
 # ───────────── BOT ─────────────
@@ -276,7 +287,7 @@ async def post_panel(channel: discord.abc.Messageable):
     guild = getattr(channel, "guild", None)
 
     embed = discord.Embed(
-        title="🏆  JOIN THE ELT ESPORT TEAM",
+        title="JOIN THE ELT ESPORT TEAM",
         description=(
             "Think you've got what it takes to **compete and represent the server?**\n"
             "Open a ticket below and show us what you can do."
@@ -284,16 +295,16 @@ async def post_panel(channel: discord.abc.Messageable):
         color=COLOR,
     )
     embed.add_field(
-        name="📋  How to apply",
+        name=f"{EMOJI_HOW}  How to apply",
         value=(
             "**1.** Press **Apply Now** below\n"
             "**2.** Tell us **what you play**\n"
-            "**3.** Send **a clip** of your gameplay 🎥"
+            "**3.** Send **a clip** of your gameplay"
         ),
         inline=True,
     )
     embed.add_field(
-        name="✅  What we look for",
+        name=f"{EMOJI_LOOK}  What we look for",
         value=(
             "• Real skill & good aim\n"
             "• Teamwork & communication\n"
@@ -302,7 +313,7 @@ async def post_panel(channel: discord.abc.Messageable):
         inline=True,
     )
     embed.add_field(
-        name="⏱️  What happens next",
+        name="What happens next",
         value="Staff reviews every application. You'll get a **DM** with the result — accepted or denied.",
         inline=False,
     )
@@ -340,15 +351,11 @@ async def on_message(message: discord.Message):
     if owner_id == message.author.id and message.channel.id not in clip_seen:
         if message.attachments or "http" in message.content:
             clip_seen.add(message.channel.id)
-            try:
-                await message.add_reaction("✅")
-            except Exception:
-                pass
             staff = message.guild.get_role(STAFF_ROLE_ID)
             await message.channel.send(
                 content=staff.mention if staff else None,
                 embed=discord.Embed(
-                    title="🎥 Clip received",
+                    title="Clip received",
                     description="Staff can now review this application.",
                     color=COLOR))
     await bot.process_commands(message)
