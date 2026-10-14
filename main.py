@@ -1,5 +1,6 @@
 import os
 import io
+import glob
 import asyncio
 import time
 from datetime import timedelta
@@ -18,7 +19,21 @@ GUILD_ID = int(os.getenv("GUILD_ID", "0"))                     # only used to cl
 COLOR = 0x9B59FF
 COOLDOWN_SECONDS = 60       # anti-spam between ticket opens
 INACTIVE_HOURS = 24         # auto close if nobody writes
-BANNER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "esport_banner.gif")
+
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def find_banner():
+    """Finds esport_banner.gif / esport_banner_v2_final.gif / any esport_banner*.gif next to main.py."""
+    exact = os.path.join(_BASE_DIR, "esport_banner.gif")
+    if os.path.exists(exact):
+        return exact
+    found = sorted(glob.glob(os.path.join(_BASE_DIR, "esport_banner*.gif")))
+    return found[-1] if found else None
+
+
+BANNER_PATH = find_banner()
+print(f"[esport] banner: {BANNER_PATH or 'NOT FOUND (panel will post without the image)'}")
 
 cooldowns = {}
 clip_seen = set()
@@ -166,12 +181,12 @@ class TicketView(discord.ui.View):
         await close_ticket(interaction.channel, f"Closed by {interaction.user}")
 
 
-# ───────────── PANEL BUTTON ─────────────
+# ───────────── PANEL BUTTONS ─────────────
 class JoinView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="Join Esport Team", style=discord.ButtonStyle.secondary,
+    @discord.ui.button(label="Apply Now", style=discord.ButtonStyle.primary,
                        emoji="🎮", custom_id="esport_join")
     async def join(self, interaction: discord.Interaction, button: discord.ui.Button):
         guild, user = interaction.guild, interaction.user
@@ -217,18 +232,20 @@ class JoinView(discord.ui.View):
             topic=f"esport:{user.id}", overwrites=overwrites)
 
         embed = discord.Embed(
-            title="🎮 ESPORT TEAM APPLICATION",
+            title="🎮  ESPORT TEAM APPLICATION",
             description=(
-                f"Welcome {user.mention}!\n\n"
-                "Please send the following in this ticket:\n\n"
-                "**1️⃣ What do you play?**\n"
-                "**2️⃣ Send a clip** of your gameplay 🎥\n\n"
-                "Staff will review your application soon."
+                f"Welcome {user.mention}! 👋\n"
+                "Send the following in this ticket and staff will review it soon.\n"
+                "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"
             ),
             color=COLOR,
         )
+        embed.add_field(name="1️⃣  What do you play?",
+                        value="Tell us your game(s), rank and role.", inline=False)
+        embed.add_field(name="2️⃣  Send a clip 🎥",
+                        value="Upload a gameplay clip or paste a link (YouTube / Medal / Streamable).", inline=False)
         embed.set_thumbnail(url=user.display_avatar.url)
-        embed.set_footer(text="ELT Esport • Good luck!")
+        embed.set_footer(text="ELT Esport  •  Good luck!")
         ping = staff.mention if staff else ""
         await channel.send(content=f"{user.mention} {ping}", embed=embed, view=TicketView())
         await interaction.followup.send(f"✅ Your ticket is ready: {channel.mention}", ephemeral=True)
@@ -257,23 +274,52 @@ bot = EsportBot(command_prefix="!", intents=intents)
 
 
 async def post_panel(channel: discord.abc.Messageable):
+    guild = getattr(channel, "guild", None)
+
     embed = discord.Embed(
-        title="🏆 JOIN THE ESPORT TEAM",
+        title="🏆  JOIN THE ELT ESPORT TEAM",
         description=(
-            "Do you want to compete and represent the server?\n\n"
-            "🎮 Click the button below to open a ticket\n"
-            "📝 Tell us **what you play**\n"
-            "🎥 Send us **a clip** of your gameplay\n\n"
-            "We will check your application and get back to you."
+            "Think you've got what it takes to **compete and represent the server?**\n"
+            "Open a ticket below and show us what you can do.\n"
+            "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"
         ),
         color=COLOR,
     )
-    embed.set_footer(text="ELT Esport • Apply now")
-    if os.path.exists(BANNER_PATH):
-        embed.set_image(url="attachment://esport_banner.gif")
-        await channel.send(embed=embed, view=JoinView(),
+    embed.add_field(
+        name="📋  How to apply",
+        value=(
+            "**1.** Press **Apply Now** below\n"
+            "**2.** Tell us **what you play**\n"
+            "**3.** Send **a clip** of your gameplay 🎥"
+        ),
+        inline=True,
+    )
+    embed.add_field(
+        name="✅  What we look for",
+        value=(
+            "• Real skill & good aim\n"
+            "• Teamwork & communication\n"
+            "• Respect & activity"
+        ),
+        inline=True,
+    )
+    embed.add_field(
+        name="⏱️  What happens next",
+        value="Staff reviews every application. You'll get a **DM** with the result — accepted or denied.",
+        inline=False,
+    )
+    if guild and guild.icon:
+        embed.set_thumbnail(url=guild.icon.url)
+    embed.set_footer(text="ELT Esport  •  Apply now, show your skills")
+
+    if BANNER_PATH and os.path.exists(BANNER_PATH):
+        # the banner is its own embed on top, so the gif shows big and animated
+        banner = discord.Embed(color=COLOR)
+        banner.set_image(url="attachment://esport_banner.gif")
+        await channel.send(embeds=[banner, embed], view=JoinView(),
                            file=discord.File(BANNER_PATH, filename="esport_banner.gif"))
     else:
+        print("[esport] banner gif not found next to main.py - posting the panel without it")
         await channel.send(embed=embed, view=JoinView())
 
 
