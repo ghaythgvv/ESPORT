@@ -21,15 +21,15 @@ COOLDOWN_SECONDS = 60       # anti-spam between ticket opens
 INACTIVE_HOURS = 24         # auto close if nobody writes
 
 # ───────────── CUSTOM EMOJIS ─────────────
-# Field titles use the text format. If an emoji is animated, change "<:" to "<a:".
-EMOJI_HOW = "<:how:1559975435658461264>"      # How to apply
-EMOJI_LOOK = "<:look:1559975433368248460>"    # What we look for
+# Panel field titles (both animated, so they use <a:name:id>)
+EMOJI_HOW = "<a:562725purplespiral:1559975435658461264>"   # How to apply
+EMOJI_LOOK = "<a:88542dancepurple:1559975433368248460>"    # What we look for
 
-# Buttons use PartialEmoji. If an emoji is animated, add animated=True.
-EMOJI_CLAIM = discord.PartialEmoji(name="claim", id=1554675609525821531)
-EMOJI_ACCEPT = discord.PartialEmoji(name="accept", id=1553555472811040788)
-EMOJI_DENY = discord.PartialEmoji(name="deny", id=1559043013811114105)
-EMOJI_CLOSE = discord.PartialEmoji(name="close", id=1553472894976393246)
+# Button emojis. If one of them is animated, set animated=True for that one.
+EMOJI_CLAIM = discord.PartialEmoji(name="claim", id=1554675609525821531, animated=False)
+EMOJI_ACCEPT = discord.PartialEmoji(name="accept", id=1553555472811040788, animated=False)
+EMOJI_DENY = discord.PartialEmoji(name="deny", id=1559043013811114105, animated=False)
+EMOJI_CLOSE = discord.PartialEmoji(name="close", id=1553472894976393246, animated=False)
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
