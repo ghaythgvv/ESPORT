@@ -235,8 +235,7 @@ class JoinView(discord.ui.View):
             title="🎮  ESPORT TEAM APPLICATION",
             description=(
                 f"Welcome {user.mention}! 👋\n"
-                "Send the following in this ticket and staff will review it soon.\n"
-                "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"
+                "Send the following in this ticket and staff will review it soon."
             ),
             color=COLOR,
         )
@@ -280,8 +279,7 @@ async def post_panel(channel: discord.abc.Messageable):
         title="🏆  JOIN THE ELT ESPORT TEAM",
         description=(
             "Think you've got what it takes to **compete and represent the server?**\n"
-            "Open a ticket below and show us what you can do.\n"
-            "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"
+            "Open a ticket below and show us what you can do."
         ),
         color=COLOR,
     )
@@ -313,10 +311,9 @@ async def post_panel(channel: discord.abc.Messageable):
     embed.set_footer(text="ELT Esport  •  Apply now, show your skills")
 
     if BANNER_PATH and os.path.exists(BANNER_PATH):
-        # the banner is its own embed on top, so the gif shows big and animated
-        banner = discord.Embed(color=COLOR)
-        banner.set_image(url="attachment://esport_banner.gif")
-        await channel.send(embeds=[banner, embed], view=JoinView(),
+        # banner lives INSIDE the same embed (Discord always draws an embed's image at its bottom)
+        embed.set_image(url="attachment://esport_banner.gif")
+        await channel.send(embed=embed, view=JoinView(),
                            file=discord.File(BANNER_PATH, filename="esport_banner.gif"))
     else:
         print("[esport] banner gif not found next to main.py - posting the panel without it")
